@@ -1,0 +1,51 @@
+# ==============================================================================
+# QuantumShop - eksctl Cluster Configuration for AWS EKS
+# ==============================================================================
+# Provision a production-grade Amazon EKS cluster with managed EC2 worker nodes.
+# Use this configuration file with the 'eksctl' command-line utility.
+# Usage:
+#   eksctl create cluster -f kubernetes/eks-cluster-config.yaml
+# ==============================================================================
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: quantumshop-cluster
+  region: us-east-1 # Change to your preferred AWS region
+  version: "1.29"   # EKS Kubernetes version
+
+vpc:
+  cidr: "192.168.0.0/16"
+  clusterEndpoints:
+    publicAccess: true  # Enables managing the cluster via kubectl locally
+    privateAccess: true # Enables private communication inside the VPC
+
+managedNodeGroups:
+  - name: quantumshop-workers
+    instanceType: t3.medium # Cost-effective instance for running general workloads
+    desiredCapacity: 2
+    minSize: 1
+    maxSize: 4
+    volumeSize: 30 # Disk space (in GB) per node
+    volumeType: gp3
+    privateNetworking: true # Places worker nodes in private subnets for security
+    ssh:
+      allow: false # Disables SSH access in favor of AWS Systems Manager Session Manager
+    labels:
+      role: worker
+    tags:
+      nodegroup-role: worker
+    iam:
+      withAddonPolicies:
+        autoScaler: true        # Permits node autoscaling based on workload demands
+        albIngress: true        # Required for AWS Load Balancer Controller integration
+        cloudWatch: true        # Required for forwarding logs to Amazon CloudWatch
+        ebs: true               # Allows pods to provision persistent EBS volumes (for MySQL PVC)
+
+# Enable common cluster add-ons
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+  - name: aws-ebs-csi-driver # Needed for database Persistent Volumes via EBS

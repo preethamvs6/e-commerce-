@@ -1,0 +1,163 @@
+-- Create Database if not exists
+CREATE DATABASE IF NOT EXISTS ecommerce_db;
+USE ecommerce_db;
+
+-- Drop Tables in reverse dependency order for a clean reset
+DROP TABLE IF EXISTS wishlist;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS cart_items;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS users;
+
+-- 1. Users Table
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'USER',
+    address TEXT,
+    phone VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. Categories Table
+CREATE TABLE IF NOT EXISTS categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 3. Products Table
+CREATE TABLE IF NOT EXISTS products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    image_url VARCHAR(500),
+    category_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    INDEX idx_product_category (category_id),
+    INDEX idx_product_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 4. Cart Items Table
+CREATE TABLE IF NOT EXISTS cart_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_user_product (user_id, product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 5. Orders Table
+CREATE TABLE IF NOT EXISTS orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    status VARCHAR(50) DEFAULT 'PENDING',
+    total_amount DECIMAL(10, 2) NOT NULL,
+    shipping_address TEXT NOT NULL,
+    payment_method VARCHAR(100) DEFAULT 'CREDIT_CARD',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_order_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 6. Order Items Table
+CREATE TABLE IF NOT EXISTS order_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 7. Wishlist Table
+CREATE TABLE IF NOT EXISTS wishlist (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_wishlist_user_product (user_id, product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed Categories
+INSERT INTO categories (name, description) VALUES
+('Electronics', 'Indian tech, audio accessories, smart home gadgets'),
+('Fashion', 'Traditional sarees, kurtas, casual shirts and active shoes'),
+('Home & Kitchen', 'Pressure cookers, water purifiers, kitchen mixers, and home linens'),
+('Books', 'Bestsellers by Indian authors, autobiographies, and historical literature');
+
+-- Seed Products (10 per category, total 40)
+
+-- Category 1: Electronics
+INSERT INTO products (name, description, price, stock, image_url, category_id) VALUES
+('boAt Airdopes 141', 'True wireless earbuds with 42 hours playback, ASAP charge, and low latency beast mode.', 1299.00, 100, 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500', 1),
+('Noise ColorFit Pulse Smartwatch', '1.4 inch HD display, 10-day battery life, SpO2 and 24/7 heart rate tracking.', 1999.00, 80, 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500', 1),
+('OnePlus Nord CE 3 Lite 5G', '8GB RAM, 128GB Storage, 108MP Camera, and 67W SuperVOOC charging.', 19999.00, 25, 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500', 1),
+('Portronics SoundDrum Speaker', '10W portable Bluetooth speaker with powerful bass, FM Radio, and IPX6 water resistance.', 1499.00, 150, 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500', 1),
+('Zebronics Zeb-Transformer Combo', 'Gaming keyboard and mouse combo with multicolour LED backlights and braided cables.', 1199.00, 90, 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500', 1),
+('boAt Bassheads 225', 'Super extra bass in-ear wired earphones with passive noise cancellation and inline mic.', 399.00, 300, 'https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?w=500', 1),
+('Realme Pad Mini Tablet', '8.7 inch display, 6400mAh massive battery, slim metal design, WiFi connectivity.', 9999.00, 40, 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500', 1),
+('Mi Power Bank 3i 20000mAh', '18W fast charging power bank supporting triple output ports and smart power management.', 1899.00, 120, 'https://images.unsplash.com/photo-1609592424109-dd9892f1b17c?w=500', 1),
+('Wipro 12W Smart LED Bulb', 'Compatible with Alexa and Google Assistant, offers 16 million colors and schedule settings.', 599.00, 200, 'https://images.unsplash.com/photo-1550985616-10810253b84d?w=500', 1),
+('TP-Link AC750 Wi-Fi Router', 'Dual band wireless router with 3 external antennas for high-speed network coverage.', 1599.00, 60, 'https://images.unsplash.com/photo-1544264516-3e448f6864d9?w=500', 1);
+
+-- Category 2: Fashion
+INSERT INTO products (name, description, price, stock, image_url, category_id) VALUES
+('Peter England Men Slim Shirt', 'Premium formal cotton slim-fit shirt styled in solid colors for office wear.', 899.00, 110, 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500', 2),
+('FabIndia Cotton Anarkali Kurta', 'Traditional ethnic Indian block prints in breathable pure organic cotton.', 2499.00, 45, 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500', 2),
+('Biba Cotton Salwar Suit Set', 'Designer salwar kameez set paired with printed dupatta for festive occasions.', 3299.00, 30, 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=500', 2),
+('Woodland Men Leather Shoes', 'Durable genuine leather outdoor casual trekking and hiking shoes.', 3495.00, 60, 'https://images.unsplash.com/photo-1520639888713-7851133b1ed0?w=500', 2),
+('Roadster Cotton Crew T-Shirt', 'Pack of 2 solid organic cotton regular fit crew neck t-shirts.', 399.00, 250, 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500', 2),
+('W Straight Georgette Kurti', 'Modern Indian straight-cut georgette top featuring geometric prints.', 1599.00, 75, 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=500', 2),
+('Sparx Running Sports Shoes', 'Lightweight mesh running and walking training shoes with EVA cushion sole.', 999.00, 140, 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500', 2),
+('Fastrack Casual Analog Watch', 'Stylish round dial metal strap watch for mens casual and daily wear.', 1795.00, 85, 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500', 2),
+('Allen Solly Cotton Chinos', 'Slim-fit stretch cotton trousers suitable for casual and semi-formal wear.', 1499.00, 95, 'https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=500', 2),
+('Skybags Bingo 32L Backpack', 'Spacious water-resistant school and college backpack with 3 compartments.', 1299.00, 120, 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500', 2);
+
+-- Category 3: Home & Kitchen
+INSERT INTO products (name, description, price, stock, image_url, category_id) VALUES
+('Pigeon Amaze Plus Kettle', '1.5 Litre stainless steel electric multi-cooker kettle for quick boiling.', 699.00, 180, 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500', 3),
+('Prestige Iris Mixer Grinder', '750 Watts motor with 3 stainless steel jars and 1 juicer jar for heavy grinding.', 3199.00, 50, 'https://images.unsplash.com/photo-1578643463396-0997cb5328c1?w=500', 3),
+('Milton Duo Thermosteel Bottle', 'Double-walled vacuum insulated flask keeping water hot or cold for 24 hours.', 899.00, 220, 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500', 3),
+('Hawkins Classic Cooker 3L', 'Sturdy mirror-polished aluminum pressure cooker with inner-lid security.', 1250.00, 90, 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=500', 3),
+('Bajaj Platini PX97 Air Cooler', '36 Litre personal desert air cooler with honeycomb pads and castor wheels.', 5999.00, 20, 'https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=500', 3),
+('Solimo Microfiber Comforter', 'All-season hypoallergenic double bed soft microfiber quilted comforter.', 1499.00, 70, 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500', 3),
+('Wipro Vesta Rice Cooker', '1.8 Litre automatic electric rice cooker with keep warm function.', 1899.00, 45, 'https://images.unsplash.com/photo-1544232409-a8eb8af85f24?w=500', 3),
+('Philips Sandwich Maker', '820 Watts automatic cut and seal sandwich toaster with non-stick plates.', 1399.00, 80, 'https://images.unsplash.com/photo-1527156278891-140d7c6c3e2f?w=500', 3),
+('Kent Gold Optima Water Filter', 'Non-electric gravity based UF water purifier with hollow fiber membrane.', 1799.00, 35, 'https://images.unsplash.com/photo-1585832770485-e68a5dbfad52?w=500', 3),
+('Bombay Dyeing Cotton Bedsheet', 'Pure cotton floral double bedsheet with 2 matching pillow cases.', 999.00, 100, 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=500', 3);
+
+-- Category 4: Books
+INSERT INTO products (name, description, price, stock, image_url, category_id) VALUES
+('The God of Small Things', 'Arundhati Roy explores family tragedies, caste dynamics, and forbidden love in Kerala.', 350.00, 150, 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500', 4),
+('Wings of Fire', 'Autobiography of APJ Abdul Kalam, tracing his early life and career in rocket sciences.', 299.00, 250, 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500', 4),
+('The White Tiger', 'Aravind Adigas Booker Prize winner exploring class struggles and ambition in modern India.', 399.00, 120, 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500', 4),
+('Train to Pakistan', 'Khushwant Singhs masterpiece depicting the partition of India in 1947.', 199.00, 180, 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500', 4),
+('The Palace of Illusions', 'A reimagining of the Mahabharata from the perspective of Panchaali (Draupadi).', 350.00, 90, 'https://images.unsplash.com/photo-1495640388908-05fa85288e61?w=500', 4),
+('Oath of the Vayuputras', 'Amish Tripathi concludes the Shiva Trilogy as Shiva wages war on evil.', 450.00, 110, 'https://images.unsplash.com/photo-1614849963640-9cc74b2a826f?w=500', 4),
+('Autobiography of a Yogi', 'Paramahansa Yogananda introduces yoga, meditation, and spiritual experiences.', 250.00, 200, 'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=500', 4),
+('Malgudi Days', 'R.K. Narayans collection of short stories set in the fictional town of Malgudi.', 220.00, 300, 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500', 4),
+('2 States: Story of My Marriage', 'Chetan Bhagats humorous romance tale of a Punjabi boy and a Tamil girl.', 180.00, 400, 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500', 4),
+('The Monk Who Sold His Ferrari', 'Robin Sharmas fable about fulfilling your dreams and reaching your destiny.', 250.00, 350, 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=500', 4);
+
+-- Seed Administrator (Default Password: "adminpassword" encrypted with BCrypt as $2a$10$vdBIOki3KCcN0Hl/HrawBOm1gyzafgay0Wnxt/D8ygel6DmXOGyee)
+-- Seed Regular User (Default Password: "password" encrypted with BCrypt as $2a$10$i2eQpifOSEDbHUZgGYgk.euFflA78TsvR5vs4MYFACfnSYlqfDiW2)
+INSERT INTO users (email, password, name, role, address, phone) VALUES
+('admin@ecommerce.com', '$2a$10$vdBIOki3KCcN0Hl/HrawBOm1gyzafgay0Wnxt/D8ygel6DmXOGyee', 'System Administrator', 'ADMIN', '100 Admin HQ Blvd, Tech City, Bangalore', '+9199990100'),
+('user@ecommerce.com', '$2a$10$i2eQpifOSEDbHUZgGYgk.euFflA78TsvR5vs4MYFACfnSYlqfDiW2', 'Jane Doe User', 'USER', '456 Retail lane, Shopping Town, Mumbai', '+9199990200');
