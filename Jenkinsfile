@@ -72,22 +72,19 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: KUBECONFIG_CREDENTIALS_ID]) {
-                        // Apply Core Workloads (Configs, DB, Services, Deployments, and Ingress)
+                        // Apply Core Workloads (Configs, DB, and Ingress)
                         sh "kubectl apply -f kubernetes/configmap.yaml"
                         sh "kubectl apply -f kubernetes/secrets.yaml"
                         sh "kubectl apply -f kubernetes/db-init-configmap.yaml"
                         sh "kubectl apply -f kubernetes/db-deployment.yaml"
-                        sh "kubectl apply -f kubernetes/backend-deployment.yaml"
-                        sh "kubectl apply -f kubernetes/frontend-deployment.yaml"
                         sh "kubectl apply -f kubernetes/ingress.yaml"
                         
-                        // Perform Rolling Updates with the newly built Docker image tag
-                        sh "kubectl set image deployment/backend-deployment backend=${DOCKER_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER} --record"
-                        sh "kubectl set image deployment/frontend-deployment frontend=${DOCKER_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER} --record"
+                        // Make deploy script executable
+                        sh "chmod +x scripts/blue-green-deploy.sh"
                         
-                        // Rollout check
-                        sh "kubectl rollout status deployment/backend-deployment"
-                        sh "kubectl rollout status deployment/frontend-deployment"
+                        // Perform Blue-Green Deployment
+                        sh "./scripts/blue-green-deploy.sh backend deploy ${DOCKER_USER}/${BACKEND_IMAGE_NAME}:${BUILD_NUMBER}"
+                        sh "./scripts/blue-green-deploy.sh frontend deploy ${DOCKER_USER}/${FRONTEND_IMAGE_NAME}:${BUILD_NUMBER}"
                     }
                 }
             }

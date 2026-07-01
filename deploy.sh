@@ -20,9 +20,11 @@ kubectl apply -f kubernetes/db-init-configmap.yaml
 kubectl apply -f kubernetes/db-deployment.yaml
 
 # 3. Microservices
-echo -e "\033[0;32m[3/4] Deploying backend and frontend microservices...\033[0m"
-kubectl apply -f kubernetes/backend-deployment.yaml
-kubectl apply -f kubernetes/frontend-deployment.yaml
+echo -e "\033[0;32m[3/4] Deploying backend and frontend microservices (Blue)...\033[0m"
+kubectl apply -f kubernetes/backend-deployment-blue.yaml
+kubectl apply -f kubernetes/backend-service.yaml
+kubectl apply -f kubernetes/frontend-deployment-blue.yaml
+kubectl apply -f kubernetes/frontend-service.yaml
 
 # 4. Routing
 echo -e "\033[0;32m[4/4] Applying Ingress routing configurations...\033[0m"

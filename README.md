@@ -186,7 +186,72 @@ Make sure a local cluster (e.g. Minikube, Docker Desktop K8s, or cloud-native AW
 
 ---
 
-## 8. REST API Documentation Summary
+## 8. AWS EC2 Deployment Guides
+
+We provide multiple robust ways to deploy QuantumShop to AWS EC2:
+
+### Option A: Automatic Provisioning & Deployment via Terraform (Recommended)
+This method provisions the VPC, Subnets, Security Groups, and EC2 instance, installs Docker & Docker Compose, and starts the container group automatically.
+
+1. Navigate to the Terraform folder:
+   ```bash
+   cd aws-ec2/terraform
+   ```
+2. Initialize Terraform and install plugins:
+   ```bash
+   terraform init
+   ```
+3. Customize deployment variables:
+   - Create a `terraform.tfvars` file to override default settings (e.g. key_name, region, instance size).
+   ```hcl
+   aws_region   = "us-east-1"
+   key_name     = "your-aws-ssh-key-name"
+   instance_type = "t3.medium"
+   ```
+4. Verify changes and apply:
+   ```bash
+   terraform plan
+   terraform apply
+   ```
+5. After a few minutes, copy the `app_url` from the outputs and view the running e-commerce store in your browser!
+
+---
+
+### Option B: Deploying on an Existing EC2 Instance (Docker Compose)
+If you already have a running Ubuntu instance and want a lightweight container deployment.
+
+1. SSH into your Ubuntu EC2 instance.
+2. Copy the `aws-ec2/deploy-docker-ec2.sh` script to your server, or clone the repository directly:
+   ```bash
+   git clone https://github.com/preethamvs6/e-commerce-.git ecommerce
+   cd ecommerce
+   ```
+3. Run the deployment script with root permissions:
+   ```bash
+   sudo ./aws-ec2/deploy-docker-ec2.sh
+   ```
+4. The script will install Docker & Docker Compose, construct a default `.env` file, pull the production images, and launch the application.
+
+---
+
+### Option C: Deploying on an Existing EC2 Instance (K3s Kubernetes)
+For a single-instance Kubernetes setup, leveraging the cluster manifests.
+
+1. SSH into your Ubuntu EC2 instance.
+2. Clone the repository and navigate into it:
+   ```bash
+   git clone https://github.com/preethamvs6/e-commerce-.git ecommerce
+   cd ecommerce
+   ```
+3. Run the K3s deployment initializer:
+   ```bash
+   sudo ./kubernetes/deploy-k3s-ec2.sh
+   ```
+4. Follow the final instructions printed by the script to apply the Kubernetes manifests inside the `kubernetes/` folder.
+
+---
+
+## 9. REST API Documentation Summary
 
 Exhaustive interactive descriptions are visible in **Swagger UI** (`http://localhost:8080/swagger-ui.html`).
 
@@ -211,7 +276,7 @@ Exhaustive interactive descriptions are visible in **Swagger UI** (`http://local
 
 ---
 
-## 9. API Testing Collection
+## 10. API Testing Collection
 
 Import `postman/ecommerce_postman_collection.json` directly into Postman.
 - The collection uses local environment variables: `baseUrl` (defaults to `http://localhost:8080`).
