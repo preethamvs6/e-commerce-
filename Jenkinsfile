@@ -72,11 +72,13 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: KUBECONFIG_CREDENTIALS_ID]) {
-                        // Apply Core Workloads (Configs, DB, and Ingress)
+                        // Apply Core Workloads (Configs, DB, Services, and Ingress)
                         sh "kubectl apply -f kubernetes/configmap.yaml"
                         sh "kubectl apply -f kubernetes/secrets.yaml"
                         sh "kubectl apply -f kubernetes/db-init-configmap.yaml"
                         sh "kubectl apply -f kubernetes/db-deployment.yaml"
+                        sh "kubectl apply -f kubernetes/backend-service.yaml"
+                        sh "kubectl apply -f kubernetes/frontend-service.yaml"
                         sh "kubectl apply -f kubernetes/ingress.yaml"
                         
                         // Make deploy script executable
